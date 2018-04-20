@@ -173,6 +173,30 @@ class Visitor_NoRecurse(Visitor):
             getattr(self, subtree.data, self.__default__)(subtree)
         return tree
 
+def visit_children(func):
+    def inner(cls, tree):
+        values = cls.visit_children(tree)
+        return func(cls, values)
+    return inner
+
+class Interpreter(object):
+
+    def visit(self, tree):
+        return getattr(self, tree.data)(tree)
+
+    def visit_children(self, tree):
+        result = []
+        for child in tree.children:
+            if isinstance(child, Tree):
+                result.append(self.visit(child))
+        return result
+
+    def __getattr__(self, name):
+        return self.__default__
+
+    def __default__(self, tree):
+        self.visit_children(tree)
+
 
 class Transformer_NoRecurse(Transformer):
     def transform(self, tree):
